@@ -74,21 +74,19 @@ class State:
     command: str | None = None
     add_back_button: bool = False
 
-    _callback: Callback | None = None
+    callback_handler: Callback | None = None
     post_call: Callback | None = None
-
-    _handler: Handler | None = None
 
     @property
     def callback(self) -> Callback:
-        if self._callback is None:
-            self._callback = construct_callback(
+        if self.callback_handler is None:
+            self.callback_handler = construct_callback(
                 send_text=self.text,
                 reply_markup=self.reply_markup,
                 node_state=self.name,
                 back_button=self.add_back_button,
             )
-        return self._callback
+        return self.callback_handler
 
     async def handle(self, data: Message | CallbackQuery, state: FSMContext):
         await self.callback(data, state)
@@ -99,6 +97,7 @@ class State:
 
     class Config:
         arbitrary_types_allowed = True
+        underscore_attrs_are_private = True
 
 
 class Transition(BaseModel):
