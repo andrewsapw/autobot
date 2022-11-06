@@ -22,7 +22,7 @@ class Graph(nx.DiGraph):
     def __init__(self, incoming_graph_data=None, **attr):
         super().__init__(incoming_graph_data, **attr)
 
-        self.bot = Bot(token=BOT_TOKEN)
+        self.bot = None
         self.dispatcher = Dispatcher()
 
     def add_node(self, state: State):
@@ -151,6 +151,7 @@ class Graph(nx.DiGraph):
 
     def run(self):
         self.init_routes()
+        self.bot = Bot(token=BOT_TOKEN)
         self.dispatcher.run_polling(self.bot)
 
 
