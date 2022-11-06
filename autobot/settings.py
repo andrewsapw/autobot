@@ -7,7 +7,7 @@ from pydantic import BaseSettings
 ROOT_DIR = pathlib.Path(__file__).parent
 
 load_dotenv(ROOT_DIR.parent / ".env")
-BOT_TOKEN: str = os.environ["BOT_TOKEN"]
+BOT_TOKEN: str = os.environ.get("BOT_TOKEN", None)
 
 
 class Settings(BaseSettings):
