@@ -1,0 +1,27 @@
+title: "AUTOBOT"
+
+states:
+  hello:
+    text: "Hello, I'm Simple Bot\nWhat is your name?"
+    command: "start"
+  age_input:
+    text: "Nice to meet you!\nHow old are you?"
+    add_back_button: yes
+  end:
+    text: "Good!"
+    add_back_button: yes
+
+transitions:
+  hello-age_input:
+    from: hello
+    to: age_input
+    conditions:
+      message:
+        - ".+"
+
+  age_input-end:
+    from: age_input
+    to: end
+    conditions:
+      message:
+        - ".+"
