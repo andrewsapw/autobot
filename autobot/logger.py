@@ -7,7 +7,6 @@ from aiogram.types import Message, CallbackQuery
 from loguru import logger
 
 
-
 class InterceptHandler(logging.Handler):
     def emit(self, record):
         # Get corresponding Loguru level if it exists.

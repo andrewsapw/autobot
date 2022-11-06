@@ -1,15 +1,11 @@
-import aiogram.exceptions
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
     CallbackQuery,
     Message,
-    BufferedInputFile,
     ReplyKeyboardRemove,
     ReplyKeyboardMarkup,
 )
-
-from autobot import bot
 
 
 async def answer(
@@ -28,14 +24,14 @@ async def answer(
 
     else:
         data = await state.get_data()
-        last_query_message = data.get("last_query_message", None)
-        
+        data.get("last_query_message", None)
+
         # Удаление старой клавиатуры - пока убрал (смотрится не очень :( )
-        
+
         # if last_query_message is not None and not isinstance(
         #     reply_markup, ReplyKeyboardRemove
         # ):
-            
+
         #     try:
         #         await bot.edit_message_reply_markup(
         #             chat_id=message.chat.id,

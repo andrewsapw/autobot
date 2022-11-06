@@ -1,20 +1,22 @@
 import pathlib
-from pprint import pprint
 
 import networkx as nx
 import yaml
 
-from autobot.types.condition import CallbackCondition, ConditionBase, MessageCondition
-from autobot.types.graph import Graph, State, Transition
-from autobot.core.generator import (
-    construct_callback,
-    construct_transitions,
-    register_command,
+from autobot.app import Graph
+from autobot.types.condition import (
+    AlwaysCondition,
+    CallbackCondition,
+    ConditionBase,
+    MessageCondition,
+    ElseCondition,
 )
-from autobot import dispatcher
+from autobot.types.graph import State, Transition
+from autobot.utils.callback import construct_callback
 
 
-def parse_conditions(conditions_dict: dict) -> list[ConditionBase]:
+def parse_conditions(transitions: dict) -> list[ConditionBase]:
+    conditions_dict = transitions["conditions"]
     conds = []
     for text in conditions_dict.get("message", []):
         conds.append(MessageCondition(text=text))
@@ -22,18 +24,23 @@ def parse_conditions(conditions_dict: dict) -> list[ConditionBase]:
     for callback_query in conditions_dict.get("callback", []):
         conds.append(CallbackCondition(data=callback_query))
 
+    else_state = conditions_dict.get("else", None)
+    if else_state is not None:
+        conds.append(ElseCondition(target=else_state))
+
+    always = "always" in conditions_dict
+    if always:
+        conds.append(AlwaysCondition(target=transitions["to"]))
+
     return conds
 
 
-def parse_config(config_path: str | pathlib.Path) -> nx.DiGraph:
-    g = nx.DiGraph()
-
+def parse_config(G: Graph, config_path: str | pathlib.Path) -> Graph:
     with open(config_path, "rb") as f:
         config_data = yaml.load(f, Loader=yaml.SafeLoader)
 
-    pprint(config_data)
-
     states = config_data["states"]
+
     transitions = config_data["transitions"]
 
     for state_name, state_data in states.items():
@@ -51,36 +58,27 @@ def parse_config(config_path: str | pathlib.Path) -> nx.DiGraph:
             node_state=state.name,
             back_button=state.add_back_button,
         )
-        g.add_node(state.name, callback=callback, command=state.command, back_button=state.add_back_button)
+        G.add_node(state)
 
-        if state.command is not None:
-            register_command(
-                dispatcher=dispatcher, command=state.command, callback=callback
-            )
-
-    transitions_formatted = {}
     for transition_name, transition_data in transitions.items():
         from_state = transition_data["from"]
-        if from_state not in g.nodes:
-            raise ValueError(f"State {from_state} not found in existing states :(")
+
+        if from_state not in G.nodes:
+            raise ValueError(f"State {from_state} not found in existing states")
 
         to_state = transition_data["to"]
-        if to_state not in g.nodes:
-            raise ValueError(f"State {to_state} not found in existing states :(")
+        if to_state not in G.nodes:
+            raise ValueError(f"State {to_state} not found in existing states")
 
-        conditions = parse_conditions(transition_data["conditions"])
-
-        callback = g.nodes[to_state]["callback"]
-        handlers = construct_transitions(
-            dispatcher=dispatcher,
+        conditions = parse_conditions(transition_data)
+        transition = Transition(
+            from_state=G.nodes[from_state]["data"],
+            to_state=G.nodes[to_state]["data"],
             conditions=conditions,
-            callback=callback,
-            from_state=from_state,
-            back_button=g.nodes[from_state]["back_button"]
         )
-        g.add_edge(from_state, to_state, handlers=handlers)
+        G.add_edge(transition)
 
-    return g
+    return G
 
 
 def parse_graph(g: nx.DiGraph) -> None:

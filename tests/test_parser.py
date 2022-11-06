@@ -1,6 +1,9 @@
-import pytest
-
 from autobot.core import parser
+from autobot.app import G
+
 
 def test_parser_simple():
-    parser.parse_config("examples/configs/simple.yaml")
+    g = parser.parse_config(G, "examples/configs/simple.yaml")
+
+    assert len(g.nodes()) > 0
+    assert len(g.edges()) > 0

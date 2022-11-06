@@ -10,6 +10,8 @@ states:
   end:
     text: "Good!"
     add_back_button: yes
+  bad_age:
+    text: "Can't understand your age. Please, try again"
 
 transitions:
   hello-age_input:
@@ -24,4 +26,11 @@ transitions:
     to: end
     conditions:
       message:
-        - ".+"
+        - "\\d+"
+      else: "bad_age"
+
+  bag_age-age:
+    from: bad_age
+    to: age_input
+    conditions:
+      always:

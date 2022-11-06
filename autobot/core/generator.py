@@ -1,93 +1,51 @@
-from typing import Any, Awaitable, Callable, Coroutine
-from aiogram.handlers import MessageHandler, CallbackQueryHandler, BaseHandler
+from typing import Callable
 
-from aiogram.filters.callback_data import CallbackData
-from aiogram.filters.text import Text
-from aiogram.filters import Filter, Command, StateFilter
-from aiogram.types import (
-    ReplyKeyboardMarkup,
-    InlineKeyboardMarkup,
-    Message,
-    CallbackQuery,
-    InlineKeyboardButton,
-)
+from aiogram import Dispatcher, F
+from aiogram.filters import Command, Filter, StateFilter
 from aiogram.fsm.state import State
-from aiogram.fsm.context import FSMContext
-from aiogram import Bot, F, Dispatcher
+from aiogram.handlers import BaseHandler, CallbackQueryHandler, MessageHandler
 
-from autobot.types.condition import ConditionBase, MessageCondition, CallbackCondition
+from autobot.logger import logger
+from autobot.types.condition import (
+    AlwaysCondition,
+    CallbackCondition,
+    ConditionBase,
+    MessageCondition,
+)
 from autobot.types.graph import State
-
-from autobot.utils import answer
-from autobot import logger
 
 
 def make_state() -> State:
     raise NotImplemented
 
 
-Callback = Callable[[Message | CallbackQuery, FSMContext], Awaitable[Any]]
-
-
-def construct_callback(
-    send_text: str,
-    node_state: str,
-    reply_markup: InlineKeyboardMarkup | None = None,
-    back_button: bool = False,
-) -> Callback:
-    _data = {}
-
-    async def callback(data: Message | CallbackQuery, state: FSMContext):
-        if "back_state" not in _data:
-            _data["back_state"] = await state.get_state()
-
-        if back_button:
-            button = InlineKeyboardButton(
-                text="Назад", callback_data=_data["back_state"]
-            )
-            if reply_markup is None:
-                markup = InlineKeyboardMarkup(inline_keyboard=[[button]])
-            else:
-                markup = reply_markup.inline_keyboard.append([button])
-        else:
-            markup = reply_markup
-            
-
-        current_state = await state.get_state()
-        logger.debug(f"Current state: {current_state}")
-        await answer(
-            state=state, message=data, reply_markup=markup, text=send_text
-        )
-
-        await state.set_state(node_state)
-        logger.debug(f"State is set to {node_state}")
-
-    callback.state_name = node_state
-    return callback
-
-
 def construct_transitions(
     dispatcher: Dispatcher,
     conditions: list[ConditionBase],
     callback: Callable,
-    from_state: str,
-    back_button: bool = False,
+    from_state: State,
+    to_state: State,
 ) -> list[BaseHandler]:
     message_filters: list[Filter] = []
     callback_filters: list[Filter] = []
 
-    state_filter = StateFilter(from_state)
+    state_filter = StateFilter(from_state.name)
     for condition in conditions:
         if isinstance(condition, MessageCondition):
-            f = F.text.regexp(condition.text)
-            dispatcher.message.register(callback, state_filter, f)
+            dispatcher.message.register(callback, state_filter, condition.check())
         elif isinstance(condition, CallbackCondition):
-            f = CallbackData.filter(F.data == condition.data)
-            dispatcher.callback_query.register(callback, state_filter, f)
+            dispatcher.callback_query.register(
+                callback, state_filter, condition.check()
+            )
+        elif isinstance(condition, AlwaysCondition):
+            from_state.post_call = to_state.callback
         else:
             raise TypeError(f"Condition of type {type(condition)} is not supported")
 
-    dispatcher.callback_query.register(callback, state_filter, f)
+    logger.debug(f"Register back button to {from_state}")
+    dispatcher.callback_query.register(
+        from_state.callback, StateFilter(to_state.name), F.data == from_state.name
+    )
 
     handlers = []
     if message_filters:
@@ -99,7 +57,7 @@ def construct_transitions(
     return handlers
 
 
-def register_command(dispatcher: Dispatcher, command: str, callback: Callback):
+def register_command(dispatcher: Dispatcher, command: str, callback):
     logger.debug(f"Register command {command}")
     dispatcher.message.register(callback, Command(command))
 
