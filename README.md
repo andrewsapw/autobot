@@ -1,51 +1,30 @@
-# AUTOBOT
+<p align="center">
+    <img src="./docs/static/autobot_head.png" alt="Pyrogram" width="128">
+    <br>
+    <b>AUTOBOT</b>
+    <br>
+</p>
+
 
 Framework for making bot from config files (we all love *YAML*, does't we?)
+
+1. [Features](#features)
+2. [Usage](#usage)
+
+# Features
+- **Automatic back button configuration** - not need to plainly think about branching
+- **Beautiful inline buttons experience** - previous message gets updated on button pressed (much cleaner message history)
+- **RegEx message filters**
+
+# Installation
 
 
 # Usage
 
 ```sh
-python -m autobot examples/configs/simple.yaml
+autobot examples/configs/simple.yaml
 ```
 
-## Sample config
-
-```yaml
-title: "AUTOBOT"
-
-states:
-  hello:
-    text: "Hello, I'm Simple Bot\nWhat is your name?"
-    command: "start"
-  age_input:
-    text: "Nice to meet you!\nHow old are you?"
-    add_back_button: yes
-  end:
-    text: "Good!"
-    add_back_button: yes
-  bad_age:
-    text: "Can't understand your age. Please, try again"
-
-transitions:
-  hello-age_input:
-    from: hello
-    to: age_input
-    conditions:
-      message:
-        - ".+"
-
-  age_input-end:
-    from: age_input
-    to: end
-    conditions:
-      message:
-        - "\\d+"
-      else: "bad_age"
-
-  bag_age-age:
-    from: bad_age
-    to: age_input
-    conditions:
-      always:
-```
+## Config examples
+- [Simple one](/examples/configs/simple.yaml)
+- [Inline buttons](/examples/configs/inline_buttons.yaml)

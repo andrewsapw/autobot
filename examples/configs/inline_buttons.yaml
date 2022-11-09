@@ -29,13 +29,11 @@ transitions:
     conditions:
       data:
         - "man"
-
   - from: hello
     to: woman
     conditions:
       data:
         - "woman"
-
   - from: hello
     to: other
     conditions:
