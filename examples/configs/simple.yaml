@@ -14,23 +14,20 @@ states:
     text: "Can't understand your age. Please, try again"
 
 transitions:
-  hello-age_input:
-    from: hello
+  - from: hello
     to: age_input
     conditions:
       message:
         - ".+"
 
-  age_input-end:
-    from: age_input
+  - from: age_input
     to: end
     conditions:
       message:
         - "\\d+"
       else: "bad_age"
 
-  bag_age-age:
-    from: bad_age
+  - from: bad_age
     to: age_input
     conditions:
       always:

@@ -1,0 +1,18 @@
+title: "AUTOBOT"
+
+states:
+  hello:
+    text: "Hello, what is your sex?"
+    inline_buttons:
+      - row:
+        - text: man
+          callback_data: man
+        - text: woman
+          callback_data: woman
+      - row:
+        - text: don't know :(
+          callback_data: dunno
+    command: "start"
+
+
+# transitions:

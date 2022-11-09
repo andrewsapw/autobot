@@ -2,17 +2,17 @@ import pathlib
 
 import networkx as nx
 import yaml
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from autobot.app import Graph
 from autobot.types.condition import (
     AlwaysCondition,
     CallbackCondition,
     ConditionBase,
-    MessageCondition,
     ElseCondition,
+    MessageCondition,
 )
 from autobot.types.graph import State, Transition
-from autobot.utils.callback import construct_callback
 
 
 def parse_conditions(transitions: dict) -> list[ConditionBase]:
@@ -35,32 +35,59 @@ def parse_conditions(transitions: dict) -> list[ConditionBase]:
     return conds
 
 
+def parse_inline_buttons(inline_buttons: list):
+    inline_buttons_formatted = []
+    for row in inline_buttons:
+        row_formatted = []
+        row_buttons = row["row"]
+        for btn in row_buttons:
+            row_formatted.append(InlineKeyboardButton.parse_obj(btn))
+
+        inline_buttons_formatted.append(row_formatted)
+
+    return InlineKeyboardMarkup(inline_keyboard=inline_buttons_formatted)
+
+
 def parse_config(G: Graph, config_path: str | pathlib.Path) -> Graph:
+    """Core function for config parser.
+    Translates config to graph structure (using networkx)
+    """
+
+    # read config
     with open(config_path, "rb") as f:
         config_data = yaml.load(f, Loader=yaml.SafeLoader)
 
+    # extract states and transition data
     states = config_data["states"]
+    transitions = config_data.get("transitions", [])
+    if transitions is None:
+        raise ValueError(
+            "Transitions can't be empty. If you want to "
+            "make one-state bot - then just remove `transitions` statement from config"
+        )
 
-    transitions = config_data["transitions"]
-
+    # process state
     for state_name, state_data in states.items():
+        # parse inline buttons
+        inline_buttons = state_data.get("inline_buttons", None)
+        if inline_buttons is not None:
+            reply_markup = parse_inline_buttons(inline_buttons)
+        else:
+            reply_markup = None
+
+        # pydantic for validation of state fields
         state = State(
             name=state_name,
             text=state_data.get("text", None),
-            reply_markup=None,
+            reply_markup=reply_markup,
             command=state_data.get("command", None),
             add_back_button=state_data.get("add_back_button", False),
         )
 
-        callback = construct_callback(
-            send_text=state.text,
-            reply_markup=state.reply_markup,
-            node_state=state.name,
-            back_button=state.add_back_button,
-        )
         G.add_node(state)
 
-    for transition_name, transition_data in transitions.items():
+    # process edges (transitions)
+    for transition_data in transitions:
         from_state = transition_data["from"]
 
         if from_state not in G.nodes:
@@ -92,5 +119,7 @@ def parse_graph(g: nx.DiGraph) -> None:
 
 
 if __name__ == "__main__":
-    g = parse_config("/home/svist/projects/autobot/examples/configs/simple.yaml")
+    from autobot.app import G
+
+    g = parse_config(G, "/home/svist/projects/autobot/examples/configs/simple.yaml")
     parse_graph(g)

@@ -123,7 +123,6 @@ class Graph(nx.DiGraph):
                 raise ValueError("Edge data can't be None")
 
             node_data: dict[str, State] = self.nodes[node]
-            node_data["data"]
 
             transition: Transition = edge_data["data"]
             handlers = self.construct_transitions(
