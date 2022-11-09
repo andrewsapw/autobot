@@ -1,10 +1,18 @@
 [tool.poetry]
-name = "autobot"
-version = "0.1.0"
+name = "autobot-tg"
+version = "0.1.2a1"
 description = "Telegram Bot creation made easy"
-authors = ["andrewsap <andrewsapw@gmail.com>"]
-license = "MIT"
+authors = ["Andrew S. <andrewsapw@gmail.com>"]
+license = "BSD-3-Clause"
 readme = "README.md"
+homepage = "https://github.com/andrewsapw/autobot"
+repository = "https://github.com/andrewsapw/autobot"
+include = [
+    "LICENSE",
+]
+packages = [
+    { include = "autobot" },
+]
 
 [tool.poetry.scripts]
 autobot = "autobot.__main__:main"
