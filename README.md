@@ -5,6 +5,7 @@
     <br>
 </p>
 
+> :warning: Project is in active development and not intended for any serious application
 
 Framework for making bot from config files (we all love *YAML*, does't we?)
 
