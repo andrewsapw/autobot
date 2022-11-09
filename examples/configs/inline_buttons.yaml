@@ -13,6 +13,31 @@ states:
         - text: don't know :(
           callback_data: dunno
     command: "start"
+  man:
+    text: "Your choice is: Man"
+    add_back_button: yes
+  woman:
+    text: "Your choice is: Woman"
+    add_back_button: yes
+  other:
+    text: "Other?"
+    add_back_button: yes
 
+transitions:
+  - from: hello
+    to: man
+    conditions:
+      data:
+        - "man"
 
-# transitions:
+  - from: hello
+    to: woman
+    conditions:
+      data:
+        - "woman"
+
+  - from: hello
+    to: other
+    conditions:
+      data:
+        - "dunno"

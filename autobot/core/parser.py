@@ -21,7 +21,7 @@ def parse_conditions(transitions: dict) -> list[ConditionBase]:
     for text in conditions_dict.get("message", []):
         conds.append(MessageCondition(text=text))
 
-    for callback_query in conditions_dict.get("callback", []):
+    for callback_query in conditions_dict.get("data", []):
         conds.append(CallbackCondition(data=callback_query))
 
     else_state = conditions_dict.get("else", None)
