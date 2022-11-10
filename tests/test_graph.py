@@ -1,17 +1,26 @@
 import pytest
 
 from autobot.app import G, Graph
+from autobot.core import parser
 from autobot.types.condition import MessageCondition
 from autobot.types.graph import State, Transition
-from autobot.core import parser
 
 
-def test_add_node():
-    state = State(name="state1", text="state1 text", reply_markup=None)
-    G.add_node(state=state)
+@pytest.fixture
+def random_state_generator():
+    def func(n: int):
+        for i in range(n):
+            yield State(name=f"state_{i}", text="state {i} text", reply_markup=None)
 
-    assert G.has_node(state.name)
-    state_added = G.nodes[state.name]
+    return func
+
+
+def test_add_node(random_state_generator):
+    for state in random_state_generator(100):
+        G.add_node(state=state)
+
+        assert G.has_node(state.name)
+        state_added = G.nodes[state.name]
 
 
 def test_non_existing_node():
@@ -43,5 +52,4 @@ def test_add_edge():
 
 def test_routes_init():
     g: Graph = parser.parse_config(G, "examples/configs/simple.yaml")
-
     g.init_routes()
