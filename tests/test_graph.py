@@ -52,4 +52,3 @@ def test_add_edge():
 
 def test_routes_init():
     g: Graph = parser.parse_config(G, "examples/configs/simple.yaml")
-    g.init_routes()

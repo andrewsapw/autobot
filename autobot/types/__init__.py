@@ -1,2 +1,2 @@
-from .graph import *
 from .condition import *
+from .graph import *

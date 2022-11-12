@@ -1,16 +1,35 @@
-from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
     CallbackQuery,
+    InlineKeyboardMarkup,
     Message,
-    ReplyKeyboardRemove,
     ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
 )
 
 
 async def answer(
-    state: FSMContext, message: Message | CallbackQuery, text: str, reply_markup=None
-):
+    state: FSMContext,
+    message: Message | CallbackQuery,
+    text: str,
+    reply_markup: InlineKeyboardMarkup | None = None,
+) -> None:
+    """Core function for handling answer functionality.
+
+    Receives import context and tries to answer beautifully:
+        - if callback event received, then try to update previous message (to keep message history clean)
+
+    Also, keeps last message with inline keyboard in history.
+
+    Args:
+        state (FSMContext): current bot state
+        message (Message | CallbackQuery): update received
+        text (str): text to send to the user
+        reply_markup (InlineKeyboardMarkup, optional): buttons to send with message. Defaults to None.
+
+    Raises:
+        ValueError: message is None
+    """
     if isinstance(message, CallbackQuery):
         if message.message is not None:
             sent_message = await message.message.edit_text(
@@ -18,31 +37,11 @@ async def answer(
                 reply_markup=reply_markup,
             )
         else:
-            sent_message = await bot.send_message(
-                chat_id=message.from_user.id, text=text, reply_markup=reply_markup
-            )
+            raise ValueError(f"Message if None")
 
     else:
         data = await state.get_data()
         data.get("last_query_message", None)
-
-        # Удаление старой клавиатуры - пока убрал (смотрится не очень :( )
-
-        # if last_query_message is not None and not isinstance(
-        #     reply_markup, ReplyKeyboardRemove
-        # ):
-
-        #     try:
-        #         await bot.edit_message_reply_markup(
-        #             chat_id=message.chat.id,
-        #             message_id=last_query_message,
-        #             reply_markup=None,
-        #         )
-        #     except aiogram.exceptions.TelegramBadRequest:
-        #         logger.warning(
-        #             f"Ошибка при редактировании сообщения {last_query_message}"
-        #         )
-
         sent_message = await message.answer(text=text, reply_markup=reply_markup)
 
     if isinstance(reply_markup, ReplyKeyboardRemove) or isinstance(

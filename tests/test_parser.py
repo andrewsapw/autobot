@@ -48,7 +48,7 @@ def test_parser_simple(simple_config: str):
 
 def test_parse_multiple_transitions(transition_generator):
     for t in transition_generator(15):
-        c = parser.parse_conditions(t)
+        c = parser.parse_transitions(t)
 
         c_dict = t["conditions"]
         if "message" in c_dict:
@@ -63,7 +63,7 @@ def test_parse_multiple_transitions(transition_generator):
 
 def test_parse_message_conditions(transition_generator):
     for t in transition_generator(10, "message"):
-        c: list[MessageCondition] = parser.parse_conditions(t)  # type: ignore
+        c: list[MessageCondition] = parser.parse_transitions(t)  # type: ignore
         assert all([isinstance(i, MessageCondition) for i in c])
         for f, cond in zip(t["conditions"]["message"], c):
             assert f == cond.text
@@ -71,7 +71,7 @@ def test_parse_message_conditions(transition_generator):
 
 def test_parse_callback_conditions(transition_generator):
     for t in transition_generator(10, "data"):
-        c: list[CallbackCondition] = parser.parse_conditions(t)  # type: ignore
+        c: list[CallbackCondition] = parser.parse_transitions(t)  # type: ignore
         assert all([isinstance(i, CallbackCondition) for i in c])
         for f, cond in zip(t["conditions"]["data"], c):
             assert f == cond.data
@@ -79,14 +79,14 @@ def test_parse_callback_conditions(transition_generator):
 
 def test_parse_else_conditions(transition_generator):
     for t in transition_generator(10, "else"):
-        c: list[ElseCondition] = parser.parse_conditions(t)  # type: ignore
+        c: list[ElseCondition] = parser.parse_transitions(t)  # type: ignore
         assert len(c) == 1
         assert t["conditions"]["else"] == c[0].target
 
 
 def test_parse_always_conditions(transition_generator):
     for t in transition_generator(10, "always"):
-        c: list[AlwaysCondition] = parser.parse_conditions(t)  # type: ignore  # type: ignore
+        c: list[AlwaysCondition] = parser.parse_transitions(t)  # type: ignore  # type: ignore
         print(t, c[0])
         assert len(c) == 1
         assert t["to"] == c[0].target

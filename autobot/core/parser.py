@@ -15,27 +15,45 @@ from autobot.types.condition import (
 from autobot.types.graph import State, Transition
 
 
-def parse_conditions(transitions: dict) -> list[ConditionBase]:
+def parse_transitions(transitions: dict) -> list[ConditionBase]:
+    """Parsing transitions from dict to ConditionBase based classes
+
+    Args:
+        transitions (dict): transitions parsed from YAML config
+
+    Returns:
+        list[ConditionBase]: parsed conditions
+    """
     conditions_dict = transitions["conditions"]
-    conds = []
-    for text in conditions_dict.get("message", []):
-        conds.append(MessageCondition(text=text))
-
-    for callback_query in conditions_dict.get("data", []):
-        conds.append(CallbackCondition(data=callback_query))
-
-    else_state = conditions_dict.get("else", None)
-    if else_state is not None:
-        conds.append(ElseCondition(target=else_state))
+    conditions: list[ConditionBase] = []
 
     always = "always" in conditions_dict
     if always:
-        conds.append(AlwaysCondition(target=transitions["to"]))
+        conditions.append(AlwaysCondition(target=transitions["to"]))
+        return conditions
 
-    return conds
+    for text in conditions_dict.get("message", []):
+        conditions.append(MessageCondition(text=text))
+
+    for callback_query in conditions_dict.get("data", []):
+        conditions.append(CallbackCondition(data=callback_query))
+
+    else_state = conditions_dict.get("else", None)
+    if else_state is not None:
+        conditions.append(ElseCondition(target=else_state))
+
+    return conditions
 
 
-def parse_inline_buttons(inline_buttons: list):
+def parse_inline_buttons(inline_buttons: list) -> InlineKeyboardMarkup:
+    """Inline buttons parsing to aiogram InlineKeyboardButton type
+
+    Args:
+        inline_buttons (list): array of inline buttons from YAML config
+
+    Returns:
+        InlineKeyboardMarkup: aiogram buttons markup
+    """
     inline_buttons_formatted = []
     for row in inline_buttons:
         row_formatted = []
@@ -81,7 +99,7 @@ def parse_config(G: Graph, config_path: str | pathlib.Path) -> Graph:
             text=state_data.get("text", None),
             reply_markup=reply_markup,
             command=state_data.get("command", None),
-            add_back_button=state_data.get("add_back_button", False),
+            back_button=state_data.get("add_back_button", False),
         )
 
         G.add_node(state)
@@ -97,7 +115,7 @@ def parse_config(G: Graph, config_path: str | pathlib.Path) -> Graph:
         if to_state not in G.nodes:
             raise ValueError(f"State {to_state} not found in existing states")
 
-        conditions = parse_conditions(transition_data)
+        conditions = parse_transitions(transition_data)
         transition = Transition(
             from_state=G.nodes[from_state]["data"],
             to_state=G.nodes[to_state]["data"],
@@ -116,10 +134,3 @@ def parse_graph(g: nx.DiGraph) -> None:
 
         for from_node, to_node in edges:
             print(from_node, to_node)
-
-
-if __name__ == "__main__":
-    from autobot.app import G
-
-    g = parse_config(G, "/home/svist/projects/autobot/examples/configs/simple.yaml")
-    parse_graph(g)

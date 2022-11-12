@@ -1,9 +1,9 @@
 import logging
 import sys
-from typing import Callable, Awaitable
+from typing import Awaitable, Callable
 
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import CallbackQuery, Message
 from loguru import logger
 
 

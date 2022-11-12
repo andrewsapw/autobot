@@ -1,8 +1,8 @@
 import click
 
+from autobot import logger
 from autobot.app import G
 from autobot.core.parser import parse_config
-from autobot import logger
 
 
 @click.command()

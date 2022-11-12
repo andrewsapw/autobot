@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "autobot-tg"
-version = "0.1.2a1"
+version = "0.1.2a2"
 description = "Telegram Bot creation made easy"
 authors = ["Andrew S. <andrewsapw@gmail.com>"]
 license = "BSD-3-Clause"
@@ -27,12 +27,15 @@ aiogram = {version = "^3.0.0b5", allow-prereleases = true}
 python-dotenv = "^0.21.0"
 loguru = "^0.6.0"
 networkx = "^2.8.8"
+attrs = "^22.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.0"
 black = {version = "^22.10.0", allow-prereleases = true}
 autoflake = "^1.7.7"
 pre-commit = "^2.20.0"
+coverage = "^6.5.0"
+pynvim = "^0.4.3"
 
 [build-system]
 requires = ["poetry-core"]
