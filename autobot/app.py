@@ -28,9 +28,12 @@ class Graph(nx.DiGraph):
         if not self.has_node(transition.to_state.name):
             self.add_node(transition.to_state)
 
-        to_state: State = self.nodes[transition.to_state.name]["data"]
-        to_state.add_in_state(transition.from_state)
-        self.update_state_data(to_state)
+        if not isinstance(transition.conditions[0], AlwaysCondition):
+            to_state: State = self.nodes[transition.to_state.name]["data"]
+            to_state.add_in_state(transition.from_state)
+            to_state.set_prev_input_name(transition.from_state.input_name)
+
+            self.update_state_data(to_state)
 
         transition.register(self, dispatcher=self.dispatcher)
         super().add_edge(

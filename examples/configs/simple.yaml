@@ -1,27 +1,44 @@
 title: "AUTOBOT"
 
 states:
-  hello:
-    text: "Hello, I'm Simple Bot\nWhat is your name?"
+  name_input:
+    text: |
+      Hello, I'm Simple Bot
+      What is your name?
     command: "start"
   age_input:
-    text: "Nice to meet you!\nHow old are you?"
-    add_back_button: yes
-  end:
-    text: "Good!"
+    text: |
+      Nice to meet you, $name_input!
+      How old are you?
     add_back_button: yes
   bad_age:
-    text: "Can't understand your age. Please, try again"
+    text: Can't understand your age. Please, try again"
+  good_age:
+    text: "Good! $age_input is a great age!"
+  guess_1:
+    text: |
+      Ok, here is the simple puzzle.
+      What has legs but cannot walk?
+  guess_1_worng:
+    text: "Oops, you are wrong. Next guess?"
+  guess_1_correct:
+    text: "Of course it is a chair!"
+  end:
+    text: |
+      Thanks for your time.
+      Please check out the tool I made with: [autobot](https://github.com/andrewsapw/autobot)
+      My config is [here](https://github.com/andrewsapw/autobot/blob/master/examples/configs/simple.yaml)
+      You can start over by typing /start
 
 transitions:
-  - from: hello
+  - from: name_input
     to: age_input
     conditions:
       message:
         - ".+"
 
   - from: age_input
-    to: end
+    to: good_age
     conditions:
       message:
         - "\\d+"
@@ -29,5 +46,29 @@ transitions:
 
   - from: bad_age
     to: age_input
+    conditions:
+      always:
+
+  - from: good_age
+    to: guess_1
+    conditions:
+      always:
+
+  - from: guess_1
+    to: guess_1_correct
+    conditions:
+      message:
+        - "(?i).*chair.*"
+      else: guess_1_worng
+
+  - from: guess_1_worng
+    to: guess_1_correct
+    conditions:
+      message:
+        - "(?i).*chair.*"
+      else: guess_1_worng
+
+  - from: guess_1_correct
+    to: end
     conditions:
       always:

@@ -5,22 +5,41 @@ states:
     text: "Hello, what is your sex?"
     inline_buttons:
       - row:
-        - text: man
-          callback_data: man
-        - text: woman
-          callback_data: woman
+          - text: man
+            callback_data: man
+          - text: woman
+            callback_data: woman
       - row:
-        - text: don't know :(
-          callback_data: dunno
+          - text: other!
+            callback_data: other
     command: "start"
   man:
-    text: "Your choice is: Man"
+    text: |
+      Your choice is: _man_
+      What is your name?
+    input_name: name
     add_back_button: yes
   woman:
-    text: "Your choice is: Woman"
+    text: |
+      Your choice is: _woman_
+      What is your name?
+    input_name: name
     add_back_button: yes
   other:
-    text: "Other?"
+    text: |
+      Your choice is: _other_
+      What is your name?
+    input_name: name
+    add_back_button: yes
+  age:
+    text: Nine to meet you, $name! How old are you?
+    add_back_button: yes
+  end:
+    text: |
+      Thanks for your time.
+      Please check out the tool I made with: [autobot](https://github.com/andrewsapw/autobot)
+      My config is [here](https://github.com/andrewsapw/autobot/blob/master/examples/configs/inline_buttons.yaml)
+      You can start over by typing /start
     add_back_button: yes
 
 transitions:
@@ -29,13 +48,39 @@ transitions:
     conditions:
       data:
         - "man"
+
   - from: hello
     to: woman
     conditions:
       data:
         - "woman"
+
   - from: hello
     to: other
     conditions:
       data:
-        - "dunno"
+        - "other"
+
+  - from: man
+    to: age
+    conditions:
+      message:
+        - ".+"
+
+  - from: woman
+    to: age
+    conditions:
+      message:
+        - ".+"
+
+  - from: other
+    to: age
+    conditions:
+      message:
+        - ".+"
+
+  - from: age
+    to: end
+    conditions:
+      message:
+        - ".+"
