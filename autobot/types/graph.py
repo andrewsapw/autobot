@@ -20,10 +20,6 @@ from autobot.utils.answer import answer
 Callback = Callable[[Message | CallbackQuery, FSMContext], Coroutine[Any, Any, Any]]
 
 
-def make_back_button():
-    ...
-
-
 @define
 class State:
     """State representation
@@ -54,35 +50,50 @@ class State:
         self.in_states.append(state.name)
         return self
 
+    def build_markup(self, prev_state: str):
+        if not self.has_back_button:
+            return self.reply_markup
+
+        if prev_state in self.in_states:
+            # if previous state is one of the predecessors
+            # then make back button from previous state and add it to self.back_buttons
+            button = InlineKeyboardButton(text="Назад", callback_data=prev_state)
+            self.back_buttons[prev_state] = button
+            self.last_back_button = button
+        elif prev_state in self.back_buttons:
+            button = self.back_buttons[prev_state]
+            self.last_back_button = button
+        else:
+            button = self.last_back_button
+
+        if self.reply_markup is None:
+            markup = InlineKeyboardMarkup(inline_keyboard=[[button]])
+        elif isinstance(self.reply_markup, InlineKeyboardMarkup):
+            markup = self.reply_markup.inline_keyboard.append([button])
+        else:
+            raise ValueError(
+                "Can't set inline back button and reply buttons at the same time!"
+            )
+
+        return markup
+
     async def callback(self, data: Message | CallbackQuery, state: FSMContext):
         prev_state = await state.get_state()
-        if self.has_back_button:
-            if prev_state in self.in_states:
-                button = InlineKeyboardButton(text="Назад", callback_data=prev_state)
-                self.back_buttons[prev_state] = button
-                self.last_back_button = button
-            elif prev_state in self.back_buttons:
-                button = self.back_buttons[prev_state]
-                self.last_back_button = button
-            else:
-                button = self.last_back_button
 
-            if self.reply_markup is None:
-                markup = InlineKeyboardMarkup(inline_keyboard=[[button]])
-            elif isinstance(self.reply_markup, InlineKeyboardMarkup):
-                markup = self.reply_markup.inline_keyboard.append([button])
-            else:
-                raise ValueError(
-                    "Can't set inline back button and reply buttons at the same time!"
-                )
-        else:
-            markup = self.reply_markup
+        # adding back button to self.reply_markup if needed
+        markup = self.build_markup(prev_state=prev_state)
+
+        # store message
+        if isinstance(data, Message) and prev_state is not None:
+            text = data.text
+            await state.update_data({prev_state: text})
 
         current_state = await state.get_state()
         logger.debug(f"Current state: {current_state}")
-        await answer(state=state, message=data, reply_markup=markup, text=self.text)
 
+        await answer(state=state, message=data, reply_markup=markup, text=self.text)
         await state.set_state(self.name)
+
         logger.debug(f"State is set to {self.name} (prev_state is {prev_state})")
 
     async def handle(self, data: Message | CallbackQuery, state: FSMContext):
