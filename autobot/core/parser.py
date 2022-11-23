@@ -100,6 +100,7 @@ def parse_config(G: Graph, config_path: str | pathlib.Path) -> Graph:
             reply_markup=reply_markup,
             command=state_data.get("command", None),
             has_back_button=state_data.get("add_back_button", False),
+            input_name=state_data.get("input_name", state_name),
         )
 
         G.add_node(state)

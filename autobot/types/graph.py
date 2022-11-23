@@ -1,3 +1,4 @@
+from string import Template
 from typing import Any, Callable, Coroutine
 
 import networkx as nx
@@ -34,7 +35,7 @@ class State:
     """
 
     name: str = field()
-    text: str = field()
+    text: Template = field(converter=Template)
     reply_markup: ReplyKeyboardMarkup | InlineKeyboardMarkup | None = field()  # buttons
     has_back_button: bool = field(default=False)
     command: str | None = field(default=None)
@@ -44,7 +45,12 @@ class State:
     in_states = field(factory=list)
 
     back_buttons = field(factory=dict)
-    last_back_button = field(factory=dict)
+    last_back_button: InlineKeyboardButton | None = field(default=None)
+    input_name: str = field(default=name)
+    prev_input_name: str | None = field(default=None)
+
+    def set_prev_input_name(self, input_name: str):
+        self.prev_input_name = input_name
 
     def add_in_state(self, state: "State"):
         self.in_states.append(state.name)
@@ -66,46 +72,77 @@ class State:
         else:
             button = self.last_back_button
 
-        if self.reply_markup is None:
+        if self.reply_markup is None and button is not None:
             markup = InlineKeyboardMarkup(inline_keyboard=[[button]])
-        elif isinstance(self.reply_markup, InlineKeyboardMarkup):
+        elif self.reply_markup is None and button is None:
+            markup = self.reply_markup
+        elif isinstance(self.reply_markup, InlineKeyboardMarkup) and button is not None:
             markup = self.reply_markup.inline_keyboard.append([button])
         else:
-            raise ValueError(
-                "Can't set inline back button and reply buttons at the same time!"
-            )
+            markup = self.reply_markup
 
         return markup
 
-    async def callback(self, data: Message | CallbackQuery, state: FSMContext):
+    async def callback(
+        self,
+        update: Message | CallbackQuery,
+        state: FSMContext,
+        edit_previous: bool = True,
+    ):
         prev_state = await state.get_state()
+        data = await state.get_data()
+        input_data = data.get("user_input", {})
+
+        if self.prev_input_name is None:
+            input_name = prev_state
+        elif prev_state is not None:
+            input_name = self.prev_input_name
+        else:
+            input_name = None
 
         # adding back button to self.reply_markup if needed
         markup = self.build_markup(prev_state=prev_state)
 
         # store message
-        if isinstance(data, Message) and prev_state is not None:
-            text = data.text
-            await state.update_data({prev_state: text})
+        if isinstance(update, Message) and input_name is not None:
+            text = update.text
+            input_data[input_name] = text
+            await state.update_data(user_input=input_data)
 
         current_state = await state.get_state()
         logger.debug(f"Current state: {current_state}")
 
-        await answer(state=state, message=data, reply_markup=markup, text=self.text)
+        if input_data:
+            answer_text = self.text.safe_substitute(**input_data)
+        else:
+            answer_text = self.text.template
+
+        await answer(
+            state=state,
+            message=update,
+            reply_markup=markup,
+            text=answer_text,
+            edit_previous=edit_previous,
+        )
         await state.set_state(self.name)
 
         logger.debug(f"State is set to {self.name} (prev_state is {prev_state})")
 
-    async def handle(self, data: Message | CallbackQuery, state: FSMContext):
+    async def handle(
+        self,
+        data: Message | CallbackQuery,
+        state: FSMContext,
+        edit_previous: bool = True,
+    ):
         """Handle bot update. Triggered on user's message or inline button trigger.
 
         Args:
             data (Message | CallbackQuery): update data
             state (FSMContext): current bot state
         """
-        await self.callback(data, state)
+        await self.callback(data, state, edit_previous=edit_previous)
         if self.post_call is not None:
-            await self.post_call(data, state)
+            await self.post_call(data, state, edit_previous=False)
 
     def register(self, dispatcher: Dispatcher):
         """Register state. Initializes command trigger.
