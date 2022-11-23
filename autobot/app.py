@@ -18,12 +18,19 @@ class Graph(nx.DiGraph):
         state.register(self.dispatcher)
         super().add_node(state.name, data=state)
 
+    def update_state_data(self, state: State):
+        self.nodes[state.name]["data"] = state
+
     def add_edge(self, transition: Transition):
         if not self.has_node(transition.from_state.name):
             self.add_node(transition.from_state)
 
         if not self.has_node(transition.to_state.name):
             self.add_node(transition.to_state)
+
+        to_state: State = self.nodes[transition.to_state.name]["data"]
+        to_state.add_in_state(transition.from_state)
+        self.update_state_data(to_state)
 
         transition.register(self, dispatcher=self.dispatcher)
         super().add_edge(
