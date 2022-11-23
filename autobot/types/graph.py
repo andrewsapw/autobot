@@ -6,17 +6,16 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
     CallbackQuery,
+    InlineKeyboardButton,
     InlineKeyboardMarkup,
     Message,
     ReplyKeyboardMarkup,
-    InlineKeyboardButton,
 )
 from attrs import define, field
 
 from autobot import logger
 from autobot.types.condition import AlwaysCondition, ConditionBase, ElseCondition
 from autobot.utils.answer import answer
-from autobot.utils.callback import construct_callback
 
 Callback = Callable[[Message | CallbackQuery, FSMContext], Coroutine[Any, Any, Any]]
 
