@@ -2,7 +2,7 @@ import pytest
 
 from autobot.app import G, Graph
 from autobot.core import parser
-from autobot.types.condition import MessageCondition
+from autobot.types.conditions.condition import MessageCondition
 from autobot.types.graph import State, Transition
 
 

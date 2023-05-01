@@ -1,21 +1,23 @@
 import pathlib
+from typing import Iterable
 
 import networkx as nx
 import yaml
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from autobot.app import Graph
-from autobot.types.condition import (
+from autobot.types import Graph, State, Transition
+from autobot.types.conditions import (
     AlwaysCondition,
     CallbackCondition,
     ConditionBase,
     ElseCondition,
     MessageCondition,
 )
-from autobot.types.graph import State, Transition
 
 
-def parse_transitions(transitions: dict) -> list[ConditionBase]:
+def parse_transitions(
+    transitions: dict, states: dict[str, State]
+) -> list[ConditionBase]:
     """Parsing transitions from dict to ConditionBase based classes
 
     Args:
@@ -27,20 +29,29 @@ def parse_transitions(transitions: dict) -> list[ConditionBase]:
     conditions_dict = transitions["conditions"]
     conditions: list[ConditionBase] = []
 
+    from_state = states[transitions["from"]]
+    to_state = states[transitions["to"]]
     always = "always" in conditions_dict
     if always:
-        conditions.append(AlwaysCondition(target=transitions["to"]))
+        conditions.append(AlwaysCondition(from_state=from_state, to_state=to_state))
         return conditions
 
     for text in conditions_dict.get("message", []):
-        conditions.append(MessageCondition(text=text))
+        conditions.append(
+            MessageCondition(from_state=from_state, to_state=to_state, text=text)
+        )
 
     for callback_query in conditions_dict.get("data", []):
-        conditions.append(CallbackCondition(data=callback_query))
+        conditions.append(
+            CallbackCondition(
+                from_state=from_state, to_state=to_state, data=callback_query
+            )
+        )
 
     else_state = conditions_dict.get("else", None)
     if else_state is not None:
-        conditions.append(ElseCondition(target=else_state))
+        else_state = states[else_state]
+        conditions.append(ElseCondition(from_state=from_state, to_state=else_state))
 
     return conditions
 
@@ -66,7 +77,7 @@ def parse_inline_buttons(inline_buttons: list) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=inline_buttons_formatted)
 
 
-def parse_config(G: Graph, config_path: str | pathlib.Path) -> Graph:
+def parse_config(config_path: str | pathlib.Path) -> tuple[dict, dict]:
     """Core function for config parser.
     Translates config to graph structure (using networkx)
     """
@@ -84,6 +95,7 @@ def parse_config(G: Graph, config_path: str | pathlib.Path) -> Graph:
             "make one-state bot - then just remove `transitions` statement from config"
         )
 
+    states_formatted = {}  # state name to state data
     # process state
     for state_name, state_data in states.items():
         # parse inline buttons
@@ -101,29 +113,23 @@ def parse_config(G: Graph, config_path: str | pathlib.Path) -> Graph:
             command=state_data.get("command", None),
             back_button=state_data.get("add_back_button", False),
         )
+        states_formatted[state.name] = state
 
-        G.add_node(state)
-
+    transitions_formatted = {}  # edge name to edge data
     # process edges (transitions)
     for transition_data in transitions:
-        from_state = transition_data["from"]
+        from_state_name = transition_data["from"]
+        to_state_name = transition_data["to"]
 
-        if from_state not in G.nodes:
-            raise ValueError(f"State {from_state} not found in existing states")
-
-        to_state = transition_data["to"]
-        if to_state not in G.nodes:
-            raise ValueError(f"State {to_state} not found in existing states")
-
-        conditions = parse_transitions(transition_data)
+        conditions = parse_transitions(transition_data, states=states_formatted)
         transition = Transition(
-            from_state=G.nodes[from_state]["data"],
-            to_state=G.nodes[to_state]["data"],
+            from_state=from_state_name,
+            to_state=to_state_name,
             conditions=conditions,
         )
-        G.add_edge(transition)
+        transitions_formatted[(transition.from_state, transition.to_state)] = transition
 
-    return G
+    return states_formatted, transitions_formatted
 
 
 def parse_graph(g: nx.DiGraph) -> None:

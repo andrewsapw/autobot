@@ -1,0 +1,5 @@
+title: "Example of quiz config"
+
+states:
+  hello:
+    text: "Hi, I'm quiz bot. Let's begin. Whats is your name?"

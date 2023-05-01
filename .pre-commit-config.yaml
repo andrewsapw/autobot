@@ -7,10 +7,6 @@ repos:
         - id: trailing-whitespace
         - id: check-ast
         - id: detect-private-key
-    - repo: https://github.com/psf/black
-      rev: 22.3.0
-      hooks:
-          - id: black
     - repo: https://github.com/PyCQA/autoflake
       rev: v1.7.7
       hooks:
@@ -19,6 +15,10 @@ repos:
               - "--in-place"
               - "--remove-all-unused-imports"
               - "--exclude=__init__.py"
+    - repo: https://github.com/psf/black
+      rev: 22.3.0
+      hooks:
+          - id: black
     - repo: https://github.com/PyCQA/isort
       rev: 5.5.2
       hooks:

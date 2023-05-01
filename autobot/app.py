@@ -2,7 +2,7 @@ import networkx as nx
 from aiogram import Bot, Dispatcher
 
 from autobot.settings import BOT_TOKEN
-from autobot.types.condition import *
+from autobot.types.conditions.condition import *
 from autobot.types.graph import *
 from autobot.types.graph import State
 
@@ -15,20 +15,16 @@ class Graph(nx.DiGraph):
         self.dispatcher = Dispatcher()
 
     def add_node(self, state: State):
-        state.register(self.dispatcher)
-        super().add_node(state.name, data=state)
+        super().add_node(state)
 
     def add_edge(self, transition: Transition):
-        if not self.has_node(transition.from_state.name):
+        if not self.has_node(transition.from_state):
             self.add_node(transition.from_state)
 
-        if not self.has_node(transition.to_state.name):
+        if not self.has_node(transition.to_state):
             self.add_node(transition.to_state)
 
-        transition.register(self, dispatcher=self.dispatcher)
-        super().add_edge(
-            transition.from_state.name, transition.to_state.name, data=transition
-        )
+        super().add_edge(transition.from_state, transition.to_state, data=transition)
 
     def run(self):
         self.bot = Bot(token=BOT_TOKEN)

@@ -1,52 +1,50 @@
+from typing import Sequence
+
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
     CallbackQuery,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     Message,
-    ReplyKeyboardMarkup,
 )
+from jinja2 import Environment
 
 from autobot.logger import logger
+from autobot.types import State
 from autobot.utils.answer import answer
 
+jinja_env = Environment()
 
-def construct_callback(
-    send_text: str,
-    node_state: str,
-    reply_markup: ReplyKeyboardMarkup | InlineKeyboardMarkup | None = None,
-    back_button: bool = False,
-):
-    _data = {}
 
-    async def callback(data: Message | CallbackQuery, state: FSMContext):
-        if "back_state" not in _data:
-            _data["back_state"] = await state.get_state()
+def construct_callback(state: State, prev_states: Sequence[str] = ()):
+    # message_template = jinja_env.from_string(state.text)
 
-        if back_button:
-            button = InlineKeyboardButton(
-                text="Назад", callback_data=_data["back_state"]
-            )
-            if reply_markup is None:
+    async def callback(data: Message | CallbackQuery, fms_state: FSMContext):
+        prev_state = await fms_state.get_state()
+
+        if state.back_button and prev_state in prev_states:
+            button = InlineKeyboardButton(text="Назад", callback_data=prev_state)
+            if state.reply_markup is None:
                 markup = InlineKeyboardMarkup(inline_keyboard=[[button]])
             else:
-                if isinstance(reply_markup, InlineKeyboardMarkup):
-                    markup = reply_markup.inline_keyboard.append([button])
+                if isinstance(state.reply_markup, InlineKeyboardMarkup):
+                    markup = state.reply_markup.inline_keyboard.append([button])
                 else:
                     raise ValueError(
                         "Can't set inline back button and reply buttons at the same time!"
                     )
         else:
-            markup = reply_markup
+            markup = state.reply_markup
 
-        current_state = await state.get_state()
+        current_state = await fms_state.get_state()
         logger.debug(f"Current state: {current_state}")
-        await answer(state=state, message=data, reply_markup=markup, text=send_text)
 
-        await state.set_state(node_state)
-        logger.debug(
-            f"State is set to {node_state} (prev_state is {_data['back_state']})"
-        )
+        context = await fms_state.get_data()
+        text = message_template.render(context)
+        await answer(state=fms_state, message=data, reply_markup=markup, text=text)
 
-    callback.state_name = node_state
+        await fms_state.set_state(state.name)
+        logger.debug(f"State is set to {state}")
+        
+
     return callback

@@ -4,7 +4,7 @@ import pytest
 
 from autobot.app import G
 from autobot.core import parser
-from autobot.types.condition import (
+from autobot.types.conditions.condition import (
     AlwaysCondition,
     CallbackCondition,
     ElseCondition,

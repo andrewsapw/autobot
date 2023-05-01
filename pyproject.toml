@@ -28,6 +28,7 @@ python-dotenv = "^0.21.0"
 loguru = "^0.6.0"
 networkx = "^2.8.8"
 attrs = "^22.1.0"
+jinja2 = "^3.1.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.0"
@@ -36,6 +37,7 @@ autoflake = "^1.7.7"
 pre-commit = "^2.20.0"
 coverage = "^6.5.0"
 pynvim = "^0.4.3"
+ipython = "^8.6.0"
 
 [build-system]
 requires = ["poetry-core"]
